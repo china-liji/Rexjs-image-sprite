@@ -1,7 +1,7 @@
-module.exports = new function(spritesmith, imagemin, pngquant, jpegtran, fs, path){
+let { RexjsImageSprite } = new function(spritesmith, imagemin, pngquant, jpegtran, fs, path){
 
-this.ImageSprite = function(defaultPlugins, fillImage){
-	return class ImageSprite {
+this.RexjsImageSprite = function(defaultPlugins, fillImage){
+	return class RexjsImageSprite {
 		constructor(input, output, dir = "", plugins = defaultPlugins){
 			let src = [];
 			
@@ -76,3 +76,5 @@ this.ImageSprite = function(defaultPlugins, fillImage){
 	require("fs"),
 	require("path")
 );
+
+module.exports = RexjsImageSprite;
