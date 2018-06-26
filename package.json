@@ -1,0 +1,22 @@
+{
+	"name": "rexjs-image-sprite",
+	"version": "1.0.1",
+	"description": "对指定文件夹中对图片文件进行合并、压缩，生成雪碧图及对应JSON文件",
+	"main": "index.js",
+	"keywords": [
+		"image",
+		"sprite",
+		"compress",
+		"图片",
+		"合并",
+		"压缩"
+	],
+	"author": "china-liji",
+	"license": "MIT",
+	"dependencies": {
+		"imagemin": "^5.3.1",
+		"imagemin-jpegtran": "^5.0.2",
+		"imagemin-pngquant": "^5.1.0",
+		"spritesmith": "^3.3.1"
+	}
+}
