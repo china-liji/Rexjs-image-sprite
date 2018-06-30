@@ -47,13 +47,15 @@ this.RexjsImageSprite = function(defaultPlugins, fillImage){
 					"utf8"
 				);
 
+				console.log(`output ${oPath.ext} completed: ${path.format(oPath)}`);
+
 				imagemin(
 					[ output ],
 					path.join(output, "../"),
 					{ use }
 				)
 				.then(() => {
-					console.log(`output completed: ${output}`);
+					console.log(`output image completed: ${output}`);
 
 					_success && _success();
 				});
