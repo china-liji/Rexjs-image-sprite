@@ -2,7 +2,7 @@ let { RexjsImageSprite } = new function(spritesmith, imagemin, pngquant, jpegtra
 
 this.RexjsImageSprite = function(defaultPlugins, fillImage){
 	return class RexjsImageSprite {
-		constructor(input, output, dir = "", plugins = defaultPlugins){
+		constructor(input, output, dir = "", plugins = defaultPlugins, _beforeWriteJson, _success){
 			let src = [];
 			
 			fillImage(src, input, input, plugins, fillImage);
@@ -13,7 +13,7 @@ this.RexjsImageSprite = function(defaultPlugins, fillImage){
 					return;
 				}
 
-				let use = [], oPath = { ...path.parse(output) }, { coordinates } = result, copy = {};
+				let jsonContent, use = [], oPath = { ...path.parse(output) }, { coordinates } = result, copy = {};
 
 				for(let key in plugins){
 					use.push(plugins[key]);
@@ -28,14 +28,22 @@ this.RexjsImageSprite = function(defaultPlugins, fillImage){
 					] = coordinates[p];
 				}
 
+				jsonContent = JSON.stringify(copy);
 				oPath.ext = ".json";
 				oPath.base = `${oPath.name}.json`;
 
 				fs.writeFileSync(output, result.image);
 
+				if(_beforeWriteJson){
+					_beforeWriteJson(oPath, jsonContent, (p, c) => {
+						oPath = p;
+						jsonContent = c;
+					});
+				}
+
 				fs.writeFileSync(
 					path.format(oPath),
-					JSON.stringify(copy),
+					jsonContent,
 					"utf8"
 				);
 
@@ -46,6 +54,8 @@ this.RexjsImageSprite = function(defaultPlugins, fillImage){
 				)
 				.then(() => {
 					console.log(`output completed: ${output}`);
+
+					_success && _success();
 				});
 			});
 		};
