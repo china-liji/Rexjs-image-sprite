@@ -61,13 +61,19 @@ this.RexjsImageSprite = function(defaultPlugins, fillImage){
 				});
 			});
 		};
+
+		static get defaultPlugins(){
+			return defaultPlugins;
+		};
 	};
 }(
 	// defaultPlugins
 	{
 		".jpeg": jpegtran(),
 		".jpg": jpegtran(),
-		".png": pngquant()
+		".png": pngquant({
+			speed: 0
+		})
 	},
 	// fillImage
 	(src, input, dirname, plugins, callee) => {
