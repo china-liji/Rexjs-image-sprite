@@ -1,1 +1,1 @@
-module.exports = {"hello/add.png":{"x":0,"y":0,"width":70,"height":74},"hello/settings-switch-close.png":{"x":70,"y":0,"width":50,"height":51},"hello/settings-switch-open.png":{"x":120,"y":0,"width":50,"height":51}};
+export default {"hello/add.png":{"x":0,"y":0,"width":70,"height":74},"hello/settings-switch-close.png":{"x":70,"y":0,"width":50,"height":51},"hello/settings-switch-open.png":{"x":120,"y":0,"width":50,"height":51}};

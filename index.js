@@ -1,9 +1,99 @@
 let { RexjsImageSprite } = new function(spritesmith, imagemin, pngquant, jpegtran, fs, path){
 
-this.RexjsImageSprite = function(defaultPlugins, fillImage){
+this.Output = function(Promise, JSON_PATH_PFEFIX){
+	return class Output {
+		constructor(imagePathString, textPathString = `${JSON_PATH_PFEFIX}json`){
+			let imagePath = path.parse(imagePathString), textPath = path.parse(textPathString);
+
+			if(textPathString.indexOf(JSON_PATH_PFEFIX) === 0){
+				textPath = path.parse(
+					path.resolve(
+						imagePathString,
+						`../${imagePath.name}.${textPath.base.substring(JSON_PATH_PFEFIX.length)}`
+					)
+				);
+			}
+			
+			this.imagePath = imagePath;
+			this.textPath = textPath;
+		};
+
+		run(result, textContent, _callback){
+			let minable = true, encoding = null, { imagePath, textPath } = this, { image } = result;
+
+			new Promise((res) => {
+				if(imagePath.ext !== ".js"){
+					res();
+					return;
+				}
+
+				encoding = "utf8";
+				minable = false;
+
+				switch(path.parse(imagePath.name).ext){
+					case ".imagedata":
+						require("get-pixels")(image, `image/png`, (err, pixels) => {
+							let { data, shape: { 0: width, 1: height } } = pixels;
+
+							image = `export default { width: ${width}, height: ${height}, data: [${data.join(",")}]};`
+
+							res();
+						})
+						return;
+
+					default:
+						image = `export default "${image.toString("base64")}"`;
+						break;
+				}
+
+				res();
+			})
+			.then(() => {
+				fs.writeFileSync(
+					path.format(imagePath),
+					image,
+					encoding
+				);
+
+				console.log(`output ${imagePath.ext} completed: ${path.format(imagePath)}`);
+
+				if(textPath.ext === ".js"){
+					switch(path.parse(textPath.name).ext){
+						case ".require":
+							textContent = `module.exports = ${textContent};`;
+							return;
+
+						default:
+							textContent = `export default ${textContent};`;
+							break;
+					}
+				}
+
+				fs.writeFileSync(
+					path.format(this.textPath),
+					textContent,
+					"utf8"
+				);
+
+				console.log(`output ${textPath.ext} completed: ${path.format(textPath)}`);
+				_callback && _callback(minable);
+			});
+		};
+	};
+}(
+	Promise,
+	// JSON_PATH_PFEFIX
+	"${imagePath}."
+);
+
+this.RexjsImageSprite = function(Output, defaultPlugins, fillImage, min){
 	return class RexjsImageSprite {
-		constructor(input, output, dir = "", plugins = defaultPlugins, _beforeWriteJson, _success){
+		constructor(input, output, dir = "", plugins = defaultPlugins, _success){
 			let src = [];
+
+			if(typeof output === "string"){
+				output = new Output(output);
+			}
 			
 			fillImage(src, input, input, plugins, fillImage);
 
@@ -13,7 +103,7 @@ this.RexjsImageSprite = function(defaultPlugins, fillImage){
 					return;
 				}
 
-				let jsonContent, use = [], oPath = { ...path.parse(output) }, { coordinates } = result, copy = {};
+				let use = [], copy = {}, { coordinates } = result, { textPath, imagePath } = output;
 
 				for(let key in plugins){
 					use.push(plugins[key]);
@@ -28,45 +118,28 @@ this.RexjsImageSprite = function(defaultPlugins, fillImage){
 					] = coordinates[p];
 				}
 
-				jsonContent = JSON.stringify(copy);
-				oPath.ext = ".json";
-				oPath.base = `${oPath.name}.json`;
-
-				fs.writeFileSync(output, result.image);
-
-				if(_beforeWriteJson){
-					_beforeWriteJson(oPath, jsonContent, (p, c) => {
-						oPath = p;
-						jsonContent = c;
-					});
-				}
-
-				fs.writeFileSync(
-					path.format(oPath),
-					jsonContent,
-					"utf8"
+				output.run(
+					result,
+					JSON.stringify(copy),
+					(minable) => {
+						if(minable){
+							min(
+								path.format(imagePath),
+								use,
+								_success
+							)
+						}
+					}
 				);
-
-				console.log(`output ${oPath.ext} completed: ${path.format(oPath)}`);
-
-				imagemin(
-					[ output ],
-					path.join(output, "../"),
-					{ use }
-				)
-				.then(() => {
-					console.log(`output image completed: ${output}`);
-
-					_success && _success();
-				});
 			});
 		};
 
-		static get defaultPlugins(){
-			return defaultPlugins;
+		static get Output(){
+			return Output;
 		};
 	};
 }(
+	this.Output,
 	// defaultPlugins
 	{
 		".jpeg": jpegtran(),
@@ -88,6 +161,19 @@ this.RexjsImageSprite = function(defaultPlugins, fillImage){
 			else if(stats.isFile() && plugins.hasOwnProperty(path.parse(filename).ext)){
 				src.push(filename);
 			}
+		});
+	},
+	// min
+	(imagePathString, use, _success) => {
+		imagemin(
+			[ imagePathString ],
+			path.join(imagePathString, "../"),
+			{ use }
+		)
+		.then(() => {
+			console.log(`imagemin completed: ${imagePathString}`);
+
+			_success && _success();
 		});
 	}
 );
